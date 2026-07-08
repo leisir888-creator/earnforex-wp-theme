@@ -1,0 +1,57 @@
+﻿name: Deploy WordPress Theme via FTP
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'earnforex-wp-theme/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to FTP
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify theme structure
+        run: |
+          echo "=== Theme files ==="
+          find earnforex-wp-theme -type f -name "*.php" -o -name "*.css" -o -name "*.js" | head -20
+          echo "=== Checking required files ==="
+          test -f earnforex-wp-theme/style.css && echo "✅ style.css" || echo "❌ style.css missing"
+          test -f earnforex-wp-theme/functions.php && echo "✅ functions.php" || echo "❌ functions.php missing"
+          test -f earnforex-wp-theme/index.php && echo "✅ index.php" || echo "❌ index.php missing"
+
+      - name: Deploy to FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ${{ secrets.FTP_PROTOCOL || 'ftp' }}
+          port: ${{ secrets.FTP_PORT || '21' }}
+          local-dir: earnforex-wp-theme/
+          server-dir: ${{ secrets.FTP_REMOTE_DIR || '/wp-content/themes/earnforex-wp-theme/' }}
+          exclude: |
+            **/.git/**
+            **/.github/**
+            **/node_modules/**
+            **/*.log
+            **/*.zip
+            **/.DS_Store
+            **/Thumbs.db
+            **/*.map
+          dangerous-clean-slate: false
+
+      - name: Verify deployment
+        if: success()
+        run: echo "✅ Theme deployed successfully!"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed."
+          exit 1
