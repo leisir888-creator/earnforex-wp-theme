@@ -736,14 +736,9 @@ class EFP_Affiliate_Link_Manager {
 EFP_Affiliate_Link_Manager::instance();
 
 // 主题激活/切换时刷新重写规则
-// function efp_aff_theme_setup() {  // 已移除，CPT 在 init 注册
-    EFP_Affiliate_Link_Manager::instance();
-    // flush_rewrite_rules();  // 不再需要，init 会自动处理
-}
+// 
 // 已移除 after_switch_theme，CPT 已在 init 注册
 
 // 可选：主题停用时清理（可选）
-// function efp_aff_theme_cleanup() {  // 不再需要
-    // flush_rewrite_rules();  // 不再需要，init 会自动处理
-}
+// 
 // add_action('switch_theme', 'efp_aff_theme_cleanup');  // 不再需要
