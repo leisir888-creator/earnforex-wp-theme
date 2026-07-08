@@ -1,0 +1,239 @@
+/**
+ * Editor Styles for EarnForex WP Theme
+ *
+ * @package EarnForex_WP
+ * @since 1.0.0
+ */
+
+.wp-block {
+    max-width: 1200px;
+}
+
+.wp-block-group.hero-section {
+    background: linear-gradient(135deg, #001A38 0%, #002B5C 100%);
+    color: white;
+    padding: 4rem 1.5rem;
+    border-radius: 1rem;
+    text-align: center;
+}
+
+.wp-block-group.hero-section .wp-block-heading {
+    color: white;
+}
+
+.wp-block-group.hero-section .wp-block-heading .accent {
+    color: #4FD1C5;
+}
+
+.wp-block-group.hero-section .wp-block-paragraph {
+    color: rgba(255,255,255,0.9);
+    font-size: 1.125rem;
+}
+
+.wp-block-group.hero-section .wp-block-button__link {
+    background: linear-gradient(135deg, #4FD1C5 0%, #38B2AC 100%);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+}
+
+.wp-block-group.brokers-list .wp-block-query {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.wp-block-group.broker-review-summary {
+    background: #F7FAFC;
+    border-radius: 0.75rem;
+    padding: 2rem;
+}
+
+.wp-block-group.broker-review-summary .rating-value {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #4FD1C5;
+}
+
+.wp-block-group.broker-review-summary .rating-label {
+    color: #718096;
+}
+
+.wp-block-group.broker-review-summary__pros li::before {
+    content: "✓ ";
+    color: #68D391;
+    font-weight: bold;
+}
+
+.wp-block-group.broker-review-summary__cons li::before {
+    content: "✗ ";
+    color: #FC8181;
+    font-weight: bold;
+}
+
+.wp-block-group.section-block {
+    margin: 3rem 0;
+}
+
+.wp-block-group.section-block__header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.wp-block-group.section-block__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.wp-block-group.post-card, .wp-block-group.tool-card {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.wp-block-group.post-card:hover, .wp-block-group.tool-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 26, 56, 0.1), 0 10px 10px -5px rgba(0, 26, 56, 0.04);
+}
+
+.wp-block-group.post-card__thumbnail, .wp-block-group.tool-card__thumbnail {
+    aspect-ratio: 16/10;
+    overflow: hidden;
+}
+
+.wp-block-group.post-card__thumbnail img, .wp-block-group.tool-card__thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.wp-block-group.post-card:hover .wp-block-group.post-card__thumbnail img,
+.wp-block-group.tool-card:hover .wp-block-group.tool-card__thumbnail img {
+    transform: scale(1.05);
+}
+
+.wp-block-group.post-card__content, .wp-block-group.tool-card__content {
+    padding: 1.5rem;
+}
+
+.wp-block-group.post-card__category, .wp-block-group.tool-card__category {
+    margin-bottom: 0.5rem;
+}
+
+.wp-block-group.post-card__category a, .wp-block-group.tool-card__category a {
+    font-size: 0.75rem;
+    background: #F7FAFC;
+    color: #4FD1C5;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    text-decoration: none;
+}
+
+.wp-block-group.post-card__title, .wp-block-group.tool-card__title {
+    font-size: 1.125rem;
+    margin-bottom: 0.75rem;
+}
+
+.wp-block-group.post-card__title a, .wp-block-group.tool-card__title a {
+    color: #001A38;
+    text-decoration: none;
+}
+
+.wp-block-group.post-card__title a:hover, .wp-block-group.tool-card__title a:hover {
+    color: #4FD1C5;
+}
+
+.wp-block-group.post-card__excerpt, .wp-block-group.tool-card__excerpt {
+    color: #718096;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.wp-block-group.brokers-list__card {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
+.wp-block-group.broker-card__header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #E2E8F0;
+    background: #F7FAFC;
+}
+
+.wp-block-group.broker-card__logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.5rem;
+    object-fit: cover;
+}
+
+.wp-block-group.broker-card__name {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin: 0.5rem 0 0.25rem;
+}
+
+.wp-block-group.rating-stars {
+    display: flex;
+    gap: 2px;
+}
+
+.wp-block-group.rating-value {
+    font-weight: 700;
+    color: #4FD1C5;
+}
+
+.wp-block-group.rating-count {
+    font-size: 0.75rem;
+    color: #718096;
+}
+
+.wp-block-group.broker-card__features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.wp-block-group.feature-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    background: #F7FAFC;
+    border-radius: 9999px;
+}
+
+.wp-block-group.broker-card__footer {
+    padding: 1.5rem;
+    border-top: 1px solid #E2E8F0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wp-block-group.broker-card__spread-value {
+    font-weight: 700;
+    color: #4FD1C5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .wp-block-group.brokers-list .wp-block-query {
+        grid-template-columns: 1fr;
+    }
+
+    .wp-block-group.section-block__grid {
+        grid-template-columns: 1fr;
+    }
+}

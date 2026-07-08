@@ -1,0 +1,111 @@
+/**
+ * Admin & Login Page Styles - Replace WordPress Logo with FX Traders Kit Icon
+ *
+ * @package EarnForex_WP
+ * @since 1.0.0
+ */
+
+/* ========================================
+   1. Login Page - Replace Big Logo
+   ======================================== */
+.login h1 a {
+    width: 120px !important;
+    height: 120px !important;
+    background-image: url("https://www.fxtraderskit.com/wp-content/uploads/2026/07/favicon-512-new.png") !important;
+    background-size: contain !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    background-color: transparent !important;
+    margin: 0 auto 24px !important;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 26, 56, 0.15);
+    animation: efp-logo-float 3s ease-in-out infinite;
+}
+
+@keyframes efp-logo-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+/* ========================================
+   2. Admin Bar - Replace Top-Left WP Logo
+   ======================================== */
+#wp-admin-bar-wp-logo > .ab-item {
+    background-image: url("https://www.fxtraderskit.com/wp-content/uploads/2026/07/favicon-512-new.png") !important;
+    background-size: 20px 20px !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    border-radius: 6px !important;
+    margin: 8px 6px !important;
+    box-shadow: 0 2px 6px rgba(0, 26, 56, 0.15);
+}
+
+#wp-admin-bar-wp-logo > .ab-item::before {
+    content: "" !important;
+    display: none !important;
+}
+
+#wp-admin-bar-wp-logo > .ab-item:hover {
+    background-color: rgba(79, 209, 197, 0.15) !important;
+}
+
+/* Hide the "WordPress" text in admin bar submenu */
+#wp-admin-bar-wp-logo .ab-submenu {
+    padding-top: 8px !important;
+}
+
+#wp-admin-bar-wp-logo .ab-submenu .ab-item:first-child {
+    display: none !important;
+}
+
+/* ========================================
+   3. Dashboard - "Welcome to WordPress" panel
+   ======================================== */
+#welcome-panel .welcome-panel-column:first-child .wp-logo {
+    display: none !important;
+}
+
+/* ========================================
+   4. Admin Footer - "Thank you for creating with WordPress"
+   ======================================== */
+#wpfooter .wp-footer-links {
+    display: none !important;
+}
+
+/* ========================================
+   5. Updates Page - WP Logo
+   ======================================== */
+.wp-core-ui .wp-logo {
+    background-image: url("https://www.fxtraderskit.com/wp-content/uploads/2026/07/favicon-512-new.png") !important;
+    background-size: contain !important;
+}
+
+/* ========================================
+   6. Customizer - Sidebar Logo
+   ======================================== */
+.wp-full-overlay-sidebar .wp-logo {
+    background-image: url("https://www.fxtraderskit.com/wp-content/uploads/2026/07/favicon-512-new.png") !important;
+    background-size: 32px 32px !important;
+}
+
+/* ========================================
+   7. Network Admin (Multisite) - Network Admin Bar
+   ======================================== */
+#wp-admin-bar-my-sites .ab-item::before {
+    content: "" !important;
+}
+
+#wp-admin-bar-my-sites .ab-item {
+    background-image: url("https://www.fxtraderskit.com/wp-content/uploads/2026/07/favicon-512-new.png") !important;
+    background-size: 20px 20px !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    border-radius: 6px !important;
+    margin: 8px 6px !important;
+}
