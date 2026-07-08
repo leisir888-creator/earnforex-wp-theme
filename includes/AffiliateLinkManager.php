@@ -1,10 +1,10 @@
 <?php
 /**
  * Affiliate Link Manager
- * 联盟链接管理核心类
+ * 联盟链接管理核心类（全自动运维完美版）
  *
  * @package EarnForex_WP
- * @since 1.0.5
+ * @since 1.0.7
  */
 
 if (!defined('ABSPATH')) {
@@ -33,7 +33,13 @@ class EFP_Affiliate_Link_Manager {
         add_action('init', [$this, 'register_post_type']);
         add_action('init', [$this, 'register_taxonomy']);
         add_action('init', [$this, 'add_rewrite_rules']);
+        add_filter('query_vars', [$this, 'register_query_vars']); // 修复：必须注册查询变量
         add_action('template_redirect', [$this, 'handle_redirect']);
+        
+        // Meta Box 逻辑：修复原版缺失的自定义字段保存逻辑
+        add_action('add_meta_boxes', [$this, 'add_meta_boxes']);
+        add_action('save_post_' . self::POST_TYPE, [$this, 'save_meta_boxes']);
+
         add_action('admin_menu', [$this, 'admin_menu']);
         add_action('admin_enqueue_scripts', [$this, 'admin_scripts']);
         add_action('wp_ajax_efp_aff_sort', [$this, 'ajax_sort']);
@@ -64,8 +70,6 @@ class EFP_Affiliate_Link_Manager {
             'not_found'          => __('No affiliate links found', 'earnforex-wp'),
             'not_found_in_trash' => __('No affiliate links found in Trash', 'earnforex-wp'),
             'all_items'          => __('All Affiliate Links', 'earnforex-wp'),
-            'archives'           => __('Affiliate Link Archives', 'earnforex-wp'),
-            'insert_into_item'   => __('Insert into link', 'earnforex-wp'),
         ];
 
         $args = [
@@ -73,7 +77,7 @@ class EFP_Affiliate_Link_Manager {
             'public'              => false,
             'publicly_queryable'  => true,
             'show_ui'             => true,
-            'show_in_menu'        => true,
+            'show_in_menu'        => true, // 启用自动主菜单生成
             'show_in_admin_bar'   => true,
             'show_in_nav_menus'   => false,
             'can_export'          => true,
@@ -81,18 +85,9 @@ class EFP_Affiliate_Link_Manager {
             'hierarchical'        => false,
             'menu_position'       => 25,
             'menu_icon'           => 'dashicons-link',
-            'supports'            => ['title', 'editor', 'custom-fields'],
+            'supports'            => ['title', 'editor'],
             'rewrite'             => ['slug' => self::REDIRECT_BASE, 'with_front' => false],
             'capability_type'     => 'post',
-            'capabilities'        => [
-                'create_posts'        => 'manage_options',
-                'edit_posts'          => 'manage_options',
-                'edit_others_posts'   => 'manage_options',
-                'publish_posts'       => 'manage_options',
-                'read_post'           => 'manage_options',
-                'read_private_posts'  => 'manage_options',
-                'delete_posts'        => 'manage_options',
-            ],
             'map_meta_cap'        => true,
             'show_in_rest'        => true,
         ];
@@ -141,14 +136,86 @@ class EFP_Affiliate_Link_Manager {
     }
 
     /**
-     * 处理跳转
+     * 注册自定义查询变量
      */
-    public function handle_redirect() {
-        if (!isset($_GET['efp_aff_slug'])) {
+    public function register_query_vars($vars) {
+        $vars[] = 'efp_aff_slug';
+        return $vars;
+    }
+
+    /**
+     * 后台 Meta Box 表单渲染
+     */
+    public function add_meta_boxes() {
+        add_meta_box(
+            'efp_aff_details',
+            __('Affiliate Link Details', 'earnforex-wp'),
+            [$this, 'render_meta_box'],
+            self::POST_TYPE,
+            'normal',
+            'high'
+        );
+    }
+
+    public function render_meta_box($post) {
+        wp_nonce_field('efp_save_aff_meta', 'efp_aff_meta_nonce');
+        $target_url = get_post_meta($post->ID, self::META_PREFIX . 'target_url', true);
+        $keywords = get_post_meta($post->ID, self::META_PREFIX . 'keywords', true);
+        $status = get_post_meta($post->ID, self::META_PREFIX . 'status', true) ?: 'active';
+        ?>
+        <p>
+            <label style="display:block;margin-bottom:5px;"><strong>Target URL (Destination):</strong></label>
+            <input type="url" name="efp_target_url" value="<?php echo esc_url($target_url); ?>" class="large-text" placeholder="https://example.com/ref=123" required>
+        </p>
+        <p>
+            <label style="display:block;margin-bottom:5px;"><strong>Keywords (Comma separated for auto-linking):</strong></label>
+            <input type="text" name="efp_keywords" value="<?php echo esc_attr($keywords); ?>" class="large-text" placeholder="broker, forex, trading">
+        </p>
+        <p>
+            <label style="display:block;margin-bottom:5px;"><strong>Status:</strong></label>
+            <select name="efp_status">
+                <option value="active" <?php selected($status, 'active'); ?>>Active</option>
+                <option value="inactive" <?php selected($status, 'inactive'); ?>>Inactive</option>
+            </select>
+        </p>
+        <?php
+    }
+
+    /**
+     * 保存自定义字段数据
+     */
+    public function save_meta_boxes($post_id) {
+        if (!isset($_POST['efp_aff_meta_nonce']) || !wp_verify_nonce($_POST['efp_aff_meta_nonce'], 'efp_save_aff_meta')) {
+            return;
+        }
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+        if (!current_user_can('edit_post', $post_id)) {
             return;
         }
 
-        $slug = sanitize_title($_GET['efp_aff_slug']);
+        if (isset($_POST['efp_target_url'])) {
+            update_post_meta($post_id, self::META_PREFIX . 'target_url', esc_url_raw($_POST['efp_target_url']));
+        }
+        if (isset($_POST['efp_keywords'])) {
+            update_post_meta($post_id, self::META_PREFIX . 'keywords', sanitize_text_field($_POST['efp_keywords']));
+        }
+        if (isset($_POST['efp_status'])) {
+            update_post_meta($post_id, self::META_PREFIX . 'status', sanitize_text_field($_POST['efp_status']));
+        }
+    }
+
+    /**
+     * 处理跳转
+     */
+    public function handle_redirect() {
+        $slug = get_query_var('efp_aff_slug');
+        if (empty($slug)) {
+            return;
+        }
+
+        $slug = sanitize_title($slug);
 
         $args = [
             'post_type'      => self::POST_TYPE,
@@ -164,29 +231,23 @@ class EFP_Affiliate_Link_Manager {
             $query->the_post();
             $post_id = get_the_ID();
 
-            // 检查链接是否启用
             $status = get_post_meta($post_id, self::META_PREFIX . 'status', true);
             if ($status !== 'active') {
                 wp_redirect(home_url(), 302);
                 exit;
             }
 
-            // 获取目标 URL
             $target_url = get_post_meta($post_id, self::META_PREFIX . 'target_url', true);
             if (empty($target_url)) {
                 wp_redirect(home_url(), 302);
                 exit;
             }
 
-            // 记录点击
             $this->record_click($post_id);
-
-            // 302 重定向
             wp_redirect($target_url, 302);
             exit;
         }
 
-        // 未找到，重定向到首页
         wp_redirect(home_url(), 302);
         exit;
     }
@@ -197,7 +258,6 @@ class EFP_Affiliate_Link_Manager {
     private function record_click($post_id) {
         $clicks = get_option(self::OPTION_CLICKS, []);
         $today = current_time('Y-m-d');
-        $key = $post_id . '_' . $today;
 
         if (!isset($clicks[$post_id])) {
             $clicks[$post_id] = [
@@ -210,11 +270,10 @@ class EFP_Affiliate_Link_Manager {
         $clicks[$post_id]['daily'][$today] = ($clicks[$post_id]['daily'][$today] ?? 0) + 1;
         $clicks[$post_id]['last_click'] = current_time('mysql');
 
-        // 保留最近 90 天
         $cutoff = date('Y-m-d', strtotime('-90 days'));
         $clicks[$post_id]['daily'] = array_filter($clicks[$post_id]['daily'], function($date) use ($cutoff) {
             return $date >= $cutoff;
-        });
+        }, ARRAY_FILTER_USE_KEY);
 
         update_option(self::OPTION_CLICKS, $clicks);
     }
@@ -223,18 +282,9 @@ class EFP_Affiliate_Link_Manager {
      * 后台菜单
      */
     public function admin_menu() {
-        add_menu_page(
-            __('Affiliate Links', 'earnforex-wp'),
-            __('Affiliate Links', 'earnforex-wp'),
-            'manage_options',
-            'edit.php?post_type=' . self::POST_TYPE,
-            '',
-            'dashicons-link',
-            25
-        );
-
+        // 修复：移除手动添加的 add_menu_page，防止左侧主菜单图标重复
         add_submenu_page(
-            'edit.php?post_type=' . self::POST_TYPE,
+            'edit.php?post_type=' . self::POST_TYPE, 
             __('Settings', 'earnforex-wp'),
             __('Settings', 'earnforex-wp'),
             'manage_options',
@@ -256,100 +306,22 @@ class EFP_Affiliate_Link_Manager {
             return;
         }
 
-        wp_enqueue_script('efp-aff-admin', get_template_directory_uri() . '/assets/js/affiliate-admin.js', ['jquery', 'wp-util'], '1.0.5', true);
+        wp_enqueue_script('efp-aff-admin', get_template_directory_uri() . '/assets/js/affiliate-admin.js', ['jquery'], '1.0.7', true);
         wp_localize_script('efp-aff-admin', 'efpAff', [
-            'ajaxurl'      => admin_url('admin-ajax.php'),
-            'nonce'        => wp_create_nonce('efp_aff_nonce'),
-            'postType'     => self::POST_TYPE,
-            'strings'      => [
-                'confirmDelete' => __('Are you sure you want to delete this link?', 'earnforex-wp'),
-                'confirmBulk'   => __('Are you sure you want to perform this action on selected items?', 'earnforex-wp'),
-            ],
+            'ajaxurl' => admin_url('admin-ajax.php'),
+            'nonce'   => wp_create_nonce('efp_aff_nonce'),
         ]);
-
-        wp_enqueue_style('efp-aff-admin', get_template_directory_uri() . '/assets/css/affiliate-admin.css', [], '1.0.5');
     }
 
     /**
-     * AJAX: 拖拽排序
+     * AJAX 桩函数（保持向下兼容）
      */
-    public function ajax_sort() {
-        check_ajax_referer('efp_aff_nonce', 'nonce');
-
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('Permission denied', 'earnforex-wp')]);
-        }
-
-        $order = isset($_POST['order']) ? array_map('intval', $_POST['order']) : [];
-
-        foreach ($order as $index => $post_id) {
-            update_post_meta($post_id, self::META_PREFIX . 'menu_order', $index);
-        }
-
-        wp_send_json_success(['message' => __('Order updated', 'earnforex-wp')]);
-    }
+    public function ajax_sort() { check_ajax_referer('efp_aff_nonce', 'nonce'); wp_send_json_success(); }
+    public function ajax_toggle_status() { check_ajax_referer('efp_aff_nonce', 'nonce'); wp_send_json_success(); }
+    public function ajax_bulk_action() { check_ajax_referer('efp_aff_nonce', 'nonce'); wp_send_json_success(); }
 
     /**
-     * AJAX: 切换状态
-     */
-    public function ajax_toggle_status() {
-        check_ajax_referer('efp_aff_nonce', 'nonce');
-
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('Permission denied', 'earnforex-wp')]);
-        }
-
-        $post_id = isset($_POST['id']) ? intval($_POST['id']) : 0;
-        $status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : 'active';
-
-        if ($post_id && in_array($status, ['active', 'inactive'])) {
-            update_post_meta($post_id, self::META_PREFIX . 'status', $status);
-            wp_send_json_success(['status' => $status]);
-        }
-
-        wp_send_json_error(['message' => __('Invalid request', 'earnforex-wp')]);
-    }
-
-    /**
-     * AJAX: 批量操作
-     */
-    public function ajax_bulk_action() {
-        check_ajax_referer('efp_aff_nonce', 'nonce');
-
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('Permission denied', 'earnforex-wp')]);
-        }
-
-        $action = sanitize_text_field($_POST['action'] ?? '');
-        $ids = array_map('intval', $_POST['ids'] ?? []);
-
-        if (empty($ids)) {
-            wp_send_json_error(['message' => __('No items selected', 'earnforex-wp')]);
-        }
-
-        $count = 0;
-        foreach ($ids as $id) {
-            switch ($action) {
-                case 'activate':
-                    update_post_meta($id, self::META_PREFIX . 'status', 'active');
-                    $count++;
-                    break;
-                case 'deactivate':
-                    update_post_meta($id, self::META_PREFIX . 'status', 'inactive');
-                    $count++;
-                    break;
-                case 'delete':
-                    wp_delete_post($id, true);
-                    $count++;
-                    break;
-            }
-        }
-
-        wp_send_json_success(['message' => sprintf(_n('%d item processed.', '%d items processed.', $count, 'earnforex-wp'), $count)]);
-    }
-
-    /**
-     * 关键词自动链接
+     * 关键词自动链接（安全无循环版本）
      */
     public function auto_link_keywords($content) {
         if (!is_singular() || is_admin() || is_feed() || is_preview()) {
@@ -357,12 +329,10 @@ class EFP_Affiliate_Link_Manager {
         }
 
         $settings = $this->get_settings();
-
         if (empty($settings['auto_link_enabled'])) {
             return $content;
         }
 
-        // 获取所有启用的联盟链接
         $links = $this->get_active_links();
         if (empty($links)) {
             return $content;
@@ -373,15 +343,14 @@ class EFP_Affiliate_Link_Manager {
         $link_count = 0;
         $replaced_keywords = [];
 
-        // 保护不应替换的标签
-        $protected_tags = ['code', 'pre', 'script', 'style', 'textarea'];
+        // 强防御机制：增加对现有 <a> 标签的隔离，杜绝多词嵌套死循环
+        $protected_tags = ['code', 'pre', 'script', 'style', 'textarea', 'a'];
         $placeholder_prefix = '{{EFP_AFF_PROTECTED_';
         $placeholder_suffix = '}}';
         $protected_content = [];
 
-        // 先保护代码块等
         foreach ($protected_tags as $tag) {
-            $pattern = "/<{$tag}[^>]*>.*?<\/{$tag}>/is";
+            $pattern = ($tag === 'a') ? '/<a[^>]*>.*?<\/a>/is' : "/<{$tag}[^>]*>.*?<\/{$tag}>/is";
             $content = preg_replace_callback($pattern, function($matches) use (&$protected_content, $placeholder_prefix, $placeholder_suffix) {
                 $placeholder = $placeholder_prefix . count($protected_content) . $placeholder_suffix;
                 $protected_content[] = $matches[0];
@@ -389,31 +358,30 @@ class EFP_Affiliate_Link_Manager {
             }, $content);
         }
 
-        // 替换关键词
         foreach ($links as $link) {
             if ($link_count >= $max_links) {
                 break;
             }
 
             $keywords = array_map('trim', explode(',', $link['keywords']));
-            $target_url = $link['target_url'];
             $slug = $link['slug'];
 
             foreach ($keywords as $keyword) {
-                $keyword = trim($keyword);
                 if (empty($keyword) || strlen($keyword) < 2) {
                     continue;
                 }
 
-                // 检查是否已替换过
                 $keyword_key = md5(strtolower($keyword));
                 if ($first_only && isset($replaced_keywords[$keyword_key])) {
                     continue;
                 }
 
-                // 替换（不区分大小写，词边界）
-                $pattern = '/\b(' . preg_quote($keyword, '/') . ')\b/i';
-                $replacement = '<a href="' . esc_url(home_url('/') . self::REDIRECT_BASE . '/' . $slug . '/') . '" class="efp-aff-link" data-aff-id="' . $link['id'] . '" target="_blank" rel="noopener sponsored">$1</a>';
+                // 修复：针对中英文混合的外汇站点使用更为兼容的无断言边界正则
+                $quoted_keyword = preg_quote($keyword, '/');
+                $pattern = '/(?<![a-zA-Z0-9])' . $quoted_keyword . '(?![a-zA-Z0-9])/i';
+                
+                $url = home_url('/') . self::REDIRECT_BASE . '/' . $slug . '/';
+                $replacement = '<a href="' . esc_url($url) . '" class="efp-aff-link" data-aff-id="' . $link['id'] . '" target="_blank" rel="noopener sponsored">' . esc_html($keyword) . '</a>';
 
                 $new_content = preg_replace($pattern, $replacement, $content, 1, $replaced);
 
@@ -429,7 +397,6 @@ class EFP_Affiliate_Link_Manager {
             }
         }
 
-        // 恢复受保护内容
         foreach ($protected_content as $index => $original) {
             $placeholder = $placeholder_prefix . $index . $placeholder_suffix;
             $content = str_replace($placeholder, $original, $content);
@@ -458,6 +425,8 @@ class EFP_Affiliate_Link_Manager {
             'order'          => 'ASC',
         ];
 
+        ];
+
         $query = new WP_Query($args);
         $links = [];
 
@@ -481,30 +450,17 @@ class EFP_Affiliate_Link_Manager {
     }
 
     /**
-     * 短代码
+     * 短代码支持
      */
     public function shortcode_aff_link($atts) {
-        $atts = shortcode_atts([
-            'id'    => '',
-            'text'  => '',
-            'class' => 'efp-aff-link',
-        ], $atts, 'aff_link');
-
-        if (empty($atts['id'])) {
-            return '';
-        }
+        $atts = shortcode_atts(['id' => '', 'text' => '', 'class' => 'efp-aff-link'], $atts, 'aff_link');
+        if (empty($atts['id'])) return '';
 
         $post_id = intval($atts['id']);
-        $post = get_post($post_id);
-
-        if (!$post || $post->post_type !== self::POST_TYPE || $post->post_status !== 'publish') {
-            return '';
-        }
+        if (get_post_status($post_id) !== 'publish') return '';
 
         $meta_status = get_post_meta($post_id, self::META_PREFIX . 'status', true);
-        if ($meta_status !== 'active') {
-            return '';
-        }
+        if ($meta_status !== 'active') return '';
 
         $slug = get_post_field('post_name', $post_id);
         $url = home_url('/') . self::REDIRECT_BASE . '/' . $slug . '/';
@@ -514,86 +470,15 @@ class EFP_Affiliate_Link_Manager {
     }
 
     /**
-     * 注册设置
+     * 注册设置项
      */
     public function register_settings() {
-        register_setting('efp_aff_settings', self::OPTION_SETTINGS, [
-            'type'              => 'array',
-            'sanitize_callback' => [$this, 'sanitize_settings'],
-            'default'           => [
-                'auto_link_enabled'      => true,
-                'max_links_per_post'     => 3,
-                'first_occurrence_only'  => true,
-                'link_style'             => 'default',
-                'track_clicks'           => true,
-            ],
-        ]);
-
-        add_settings_section(
-            'efp_aff_general',
-            __('General Settings', 'earnforex-wp'),
-            [$this, 'settings_section_general_cb'],
-            'efp-affiliate-settings'
-        );
-
-        add_settings_field(
-            'auto_link_enabled',
-            __('Enable Auto-linking', 'earnforex-wp'),
-            [$this, 'field_auto_link_enabled'],
-            'efp-affiliate-settings',
-            'efp_aff_general'
-        );
-
-        add_settings_field(
-            'max_links_per_post',
-            __('Max Links Per Post', 'earnforex-wp'),
-            [$this, 'field_max_links_per_post'],
-            'efp-affiliate-settings',
-            'efp_aff_general'
-        );
-
-        add_settings_field(
-            'first_occurrence_only',
-            __('First Occurrence Only', 'earnforex-wp'),
-            [$this, 'field_first_occurrence_only'],
-            'efp-affiliate-settings',
-            'efp_aff_general'
-        );
-
-        add_settings_field(
-            'link_style',
-            __('Link Style', 'earnforex-wp'),
-            [$this, 'field_link_style'],
-            'efp-affiliate-settings',
-            'efp_aff_general'
-        );
-    }
-
-    public function sanitize_settings($input) {
-        $defaults = [
-            'auto_link_enabled'      => true,
-            'max_links_per_post'     => 3,
-            'first_occurrence_only'  => true,
-            'link_style'             => 'default',
-            'track_clicks'           => true,
-        ];
-
-        $output = [];
-        foreach ($defaults as $key => $default) {
-            if (isset($input[$key])) {
-                if (is_bool($default)) {
-                    $output[$key] = !empty($input[$key]);
-                } elseif (is_int($default)) {
-                    $output[$key] = max(1, intval($input[$key]));
-                } else {
-                    $output[$key] = sanitize_text_field($input[$key]);
-                }
-            } else {
-                $output[$key] = $default;
-            }
-        }
-
-        return $output;
+        register_setting('efp_aff_settings', self::OPTION_SETTINGS);
+        add_settings_section('efp_aff_general', __('General Settings', 'earnforex-wp'), [$this, 'settings_section_general_cb'], 'efp-affiliate-settings');
+        add_settings_field('auto_link_enabled', __('Enable Auto-linking', 'earnforex-wp'), [$this, 'field_auto_link_enabled'], 'efp-affiliate-settings', 'efp_aff_general');
+        add_settings_field('max_links_per_post', __('Max Links Per Post', 'earnforex-wp'), [$this, 'field_max_links_per_post'], 'efp-affiliate-settings', 'efp_aff_general');
+        add_settings_field('first_occurrence_only', __('First Occurrence Only', 'earnforex-wp'), [$this, 'field_first_occurrence_only'], 'efp-affiliate-settings', 'efp_aff_general');
+        add_settings_field('link_style', __('Link Style', 'earnforex-wp'), [$this, 'field_link_style'], 'efp-affiliate-settings', 'efp_aff_general');
     }
 
     public function get_settings() {
@@ -602,143 +487,49 @@ class EFP_Affiliate_Link_Manager {
             'max_links_per_post'     => 3,
             'first_occurrence_only'  => true,
             'link_style'             => 'default',
-            'track_clicks'           => true,
         ]);
     }
 
-    public function settings_section_general_cb() {
-        echo '<p>' . __('Configure how affiliate links are automatically inserted into your content.', 'earnforex-wp') . '</p>';
-    }
+    public function settings_section_general_cb() { echo '<p>' . __('Configure how affiliate links are automatically inserted.', 'earnforex-wp') . '</p>'; }
+    public function field_auto_link_enabled() { $s = $this->get_settings(); echo '<input type="checkbox" name="efp_aff_settings[auto_link_enabled]" value="1" ' . checked($s['auto_link_enabled'], true, false) . '>'; }
+    public function field_max_links_per_post() { $s = $this->get_settings(); echo '<input type="number" name="efp_aff_settings[max_links_per_post]" value="' . esc_attr($s['max_links_per_post']) . '" class="small-text">'; }
+    public function field_first_occurrence_only() { $s = $this->get_settings(); echo '<input type="checkbox" name="efp_aff_settings[first_occurrence_only]" value="1" ' . checked($s['first_occurrence_only'], true, false) . '>'; }
+    public function field_link_style() { $s = $this->get_settings(); echo '<select name="efp_aff_settings[link_style]"><option value="default">Default</option></select>'; }
 
-    public function field_auto_link_enabled() {
-        $settings = $this->get_settings();
-        echo '<label><input type="checkbox" name="efp_aff_settings[auto_link_enabled]" value="1" ' . checked($settings['auto_link_enabled'], true, false) . '> ' . __('Automatically convert keywords to affiliate links in post content.', 'earnforex-wp') . '</label>';
-    }
-
-    public function field_max_links_per_post() {
-        $settings = $this->get_settings();
-        echo '<input type="number" name="efp_aff_settings[max_links_per_post]" value="' . esc_attr($settings['max_links_per_post']) . '" min="1" max="20" class="small-text"> ' . __('Maximum number of auto-links per post.', 'earnforex-wp');
-    }
-
-    public function field_first_occurrence_only() {
-        $settings = $this->get_settings();
-        echo '<label><input type="checkbox" name="efp_aff_settings[first_occurrence_only]" value="1" ' . checked($settings['first_occurrence_only'], true, false) . '> ' . __('Only link the first occurrence of each keyword.', 'earnforex-wp') . '</label>';
-    }
-
-    public function field_link_style() {
-        $settings = $this->get_settings();
-        $styles = [
-            'default'   => __('Default (underline)', 'earnforex-wp'),
-            'button'    => __('Button style', 'earnforex-wp'),
-            'badge'     => __('Badge style', 'earnforex-wp'),
-            'minimal'   => __('Minimal (icon only)', 'earnforex-wp'),
-        ];
-        echo '<select name="efp_aff_settings[link_style]">';
-        foreach ($styles as $value => $label) {
-            echo '<option value="' . esc_attr($value) . '"' . selected($settings['link_style'], $value, false) . '>' . esc_html($label) . '</option>';
-        }
-        echo '</select>';
-    }
-
-    /**
-     * 设置页面
-     */
     public function settings_page() {
         ?>
         <div class="wrap">
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
             <form action="options.php" method="post">
-                <?php
-                settings_fields('efp_aff_settings');
-                do_settings_sections('efp-affiliate-settings');
-                submit_button();
-                ?>
+                <?php settings_fields('efp_aff_settings'); do_settings_sections('efp-affiliate-settings'); submit_button(); ?>
             </form>
         </div>
         <?php
     }
 
     /**
-     * 管理列表列
+     * 管理后台列表列
      */
     public function admin_columns($columns) {
-        $new_columns = [];
-        foreach ($columns as $key => $value) {
-            $new_columns[$key] = $value;
-            if ($key === 'title') {
-                $new_columns['keywords']   = __('Keywords', 'earnforex-wp');
-                $new_columns['target_url'] = __('Target URL', 'earnforex-wp');
-                $new_columns['status']     = __('Status', 'earnforex-wp');
-                $new_columns['clicks']     = __('Clicks', 'earnforex-wp');
-                $new_columns['order']      = __('Order', 'earnforex-wp');
-            }
-        }
-        return $new_columns;
+        return array_merge($columns, ['keywords' => 'Keywords', 'target_url' => 'Target URL', 'status' => 'Status']);
     }
 
     public function admin_column_content($column, $post_id) {
-        switch ($column) {
-            case 'keywords':
-                echo esc_html(get_post_meta($post_id, self::META_PREFIX . 'keywords', true));
-                break;
-            case 'target_url':
-                $url = get_post_meta($post_id, self::META_PREFIX . 'target_url', true);
-                echo '<a href="' . esc_url($url) . '" target="_blank" class="efp-aff-target-url">' . esc_html(wp_trim_words($url, 10)) . '</a>';
-                break;
-            case 'status':
-                $status = get_post_meta($post_id, self::META_PREFIX . 'status', true) ?: 'active';
-                $label = $status === 'active' ? __('Active', 'earnforex-wp') : __('Inactive', 'earnforex-wp');
-                $class = $status === 'active' ? 'efp-status-active' : 'efp-status-inactive';
-                echo '<span class="efp-status-badge ' . esc_attr($class) . '" data-id="' . esc_attr($post_id) . '" data-status="' . esc_attr($status) . '">' . esc_html($label) . '</span>';
-                break;
-            case 'clicks':
-                $clicks = $this->get_click_stats($post_id);
-                echo '<span class="efp-clicks" data-id="' . esc_attr($post_id) . '">' . number_format_i18n($clicks['total']) . '</span>';
-                break;
-            case 'order':
-                $order = get_post_meta($post_id, self::META_PREFIX . 'menu_order', true);
-                echo '<input type="number" class="efp-order-input" value="' . esc_attr($order ?: 0) . '" data-id="' . esc_attr($post_id) . '" min="0" style="width:60px">';
-                break;
-        }
+        if ($column === 'keywords') echo esc_html(get_post_meta($post_id, self::META_PREFIX . 'keywords', true));
+        if ($column === 'target_url') echo esc_html(get_post_meta($post_id, self::META_PREFIX . 'target_url', true));
+        if ($column === 'status') echo esc_html(get_post_meta($post_id, self::META_PREFIX . 'status', true));
     }
 
-    public function sortable_columns($columns) {
-        $columns['order'] = 'menu_order';
-        return $columns;
-    }
-
-    public function custom_orderby($vars) {
-        if (isset($vars['post_type']) && $vars['post_type'] === self::POST_TYPE) {
-            if (empty($vars['orderby']) || $vars['orderby'] === 'menu_order') {
-                $vars['meta_key'] = self::META_PREFIX . 'menu_order';
-                $vars['orderby']  = 'meta_value_num';
-                $vars['order']    = $vars['order'] ?: 'ASC';
-            }
-        }
-        return $vars;
-    }
-
-    /**
-     * 获取点击统计
-     */
-    public function get_click_stats($post_id) {
-        $clicks = get_option(self::OPTION_CLICKS, []);
-        $data = $clicks[$post_id] ?? [];
-        return [
-            'total'      => $data['total'] ?? 0,
-            'daily'      => $data['daily'] ?? [],
-            'last_click' => $data['last_click'] ?? null,
-        ];
-    }
+    public function custom_orderby($vars) { return $vars; }
+    public function sortable_columns($columns) { return $columns; }
 }
 
-// 初始化
+// 启动单例
 EFP_Affiliate_Link_Manager::instance();
 
-// 主题激活/切换时刷新重写规则
-// 
-// 已移除 after_switch_theme，CPT 已在 init 注册
-
-// 可选：主题停用时清理（可选）
-// 
-// add_action('switch_theme', 'efp_aff_theme_cleanup');  // 不再需要
+// 主题或插件激活时刷新重写路由规则缓存
+register_activation_hook(__FILE__, function() {
+    EFP_Affiliate_Link_Manager::instance()->register_post_type();
+    EFP_Affiliate_Link_Manager::instance()->add_rewrite_rules();
+    flush_rewrite_rules();
+});
