@@ -45,7 +45,7 @@ jobs:
             **/.DS_Store
             **/Thumbs.db
             **/*.map
-          dangerous-clean-slate: false
+          dangerous-clean-slate: true
 
       - name: Verify deployment
         if: success()
