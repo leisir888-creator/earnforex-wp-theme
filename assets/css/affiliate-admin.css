@@ -1,0 +1,282 @@
+/**
+ * Affiliate Link Admin Styles
+ *
+ * @package EarnForex_WP
+ * @since 1.0.5
+ */
+
+/* 列表页样式 */
+.wp-list-table .column-keywords,
+.wp-list-table .column-target_url,
+.wp-list-table .column-status,
+.wp-list-table .column-clicks,
+.wp-list-table .column-order {
+    white-space: nowrap;
+}
+
+.wp-list-table .column-keywords {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wp-list-table .column-target_url {
+    max-width: 250px;
+}
+
+.wp-list-table .column-clicks {
+    text-align: center;
+    width: 80px;
+}
+
+.wp-list-table .column-order {
+    width: 80px;
+    text-align: center;
+}
+
+.wp-list-table .column-order input {
+    text-align: center;
+    padding: 2px 4px;
+}
+
+/* 状态徽章 */
+.efp-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.efp-status-badge:hover {
+    opacity: 0.8;
+    transform: scale(1.02);
+}
+
+.efp-status-active {
+    background: rgba(79, 209, 197, 0.15);
+    color: #38B2AC;
+    border: 1px solid rgba(79, 209, 197, 0.3);
+}
+
+.efp-status-inactive {
+    background: rgba(237, 100, 116, 0.15);
+    color: #FC8181;
+    border: 1px solid rgba(237, 100, 116, 0.3);
+}
+
+/* 点击数 */
+.efp-clicks {
+    font-weight: 600;
+    color: #4A5568;
+}
+
+.efp-clicks:hover {
+    color: #4FD1C5;
+}
+
+/* 排序输入 */
+.efp-order-input {
+    text-align: center;
+    padding: 2px 4px;
+    border: 1px solid #E2E8F0;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.efp-order-input:focus {
+    outline: none;
+    border-color: #4FD1C5;
+    box-shadow: 0 0 0 2px rgba(79, 209, 197, 0.2);
+}
+
+/* 目标 URL */
+.efp-aff-target-url {
+    color: #4FD1C5;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.efp-aff-target-url:hover {
+    text-decoration: underline;
+}
+
+/* 批量操作下拉 */
+.bulk-actions select[name="action"] {
+    min-width: 180px;
+}
+
+/* 设置页面 */
+#efp_aff_settings fieldset {
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+#efp_aff_settings legend {
+    font-weight: 600;
+    color: #2D3748;
+    padding: 0 10px;
+}
+
+#efp_aff_settings .form-field {
+    margin-bottom: 15px;
+}
+
+#efp_aff_settings .form-field label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #4A5568;
+}
+
+#efp_aff_settings .form-field input[type="number"],
+#efp_aff_settings .form-field select,
+#efp_aff_settings .form-field input[type="text"] {
+    width: 100%;
+    max-width: 300px;
+}
+
+#efp_aff_settings .description {
+    margin-top: 5px;
+    color: #718096;
+    font-size: 13px;
+}
+
+/* 编辑页面 metabox */
+#efp_aff_metabox .inside {
+    padding: 10px 15px;
+}
+
+.efp-aff-field {
+    margin-bottom: 15px;
+}
+
+.efp-aff-field label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #2D3748;
+}
+
+.efp-aff-field input[type="text"],
+.efp-aff-field input[type="url"],
+.efp-aff-field textarea,
+.efp-aff-field select {
+    width: 100%;
+    max-width: 600px;
+    padding: 8px 12px;
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.efp-aff-field input:focus,
+.efp-aff-field textarea:focus,
+.efp-aff-field select:focus {
+    outline: none;
+    border-color: #4FD1C5;
+    box-shadow: 0 0 0 3px rgba(79, 209, 197, 0.2);
+}
+
+.efp-aff-field textarea {
+    min-height: 100px;
+    resize: vertical;
+    font-family: monospace;
+}
+
+.efp-aff-field .description {
+    margin-top: 5px;
+    color: #718096;
+    font-size: 12px;
+}
+
+.efp-aff-field .efp-aff-preview {
+    margin-top: 10px;
+    padding: 10px;
+    background: #F7FAFC;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #4A5568;
+}
+
+.efp-aff-field .efp-aff-preview strong {
+    color: #2D3748;
+}
+
+/* 前端链接样式 */
+a.efp-aff-link {
+    position: relative;
+    text-decoration: underline;
+    text-decoration-color: #4FD1C5;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+    transition: all 0.2s;
+}
+
+a.efp-aff-link:hover {
+    color: #4FD1C5;
+    text-decoration-color: #38B2AC;
+}
+
+a.efp-aff-link.style-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #4FD1C5 0%, #38B2AC 100%);
+    color: white !important;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(79, 209, 197, 0.3);
+    text-underline-offset: 0;
+    text-decoration: none;
+}
+
+a.efp-aff-link.style-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(79, 209, 197, 0.4);
+    color: white !important;
+}
+
+a.efp-aff-link.style-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: rgba(79, 209, 197, 0.15);
+    color: #38B2AC !important;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+a.efp-aff-link.style-minimal {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #4FD1C5 !important;
+    text-decoration: none;
+}
+
+a.efp-aff-link.style-minimal::before {
+    content: "\2197";
+    font-size: 0.8em;
+}
+
+/* 响应式 */
+@media (max-width: 782px) {
+    .wp-list-table .column-keywords,
+    .wp-list-table .column-target_url {
+        display: none;
+    }
+}

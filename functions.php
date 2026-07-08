@@ -541,3 +541,9 @@ add_filter('login_headertext', function() {
     return get_bloginfo('name');
 });
 
+
+/**
+ * Affiliate Link Manager
+ */
+require_once get_template_directory() . '/includes/AffiliateLinkManager.php';
+
