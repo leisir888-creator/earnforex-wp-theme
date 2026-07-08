@@ -34,7 +34,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ${{ secrets.FTP_PROTOCOL || 'ftp' }}
           port: ${{ secrets.FTP_PORT || '21' }}
-          local-dir: .
+          local-dir: ./
           server-dir: ${{ secrets.FTP_REMOTE_DIR || '/wp-content/themes/earnforex-wp-theme/' }}
           exclude: |
             **/.git/**
