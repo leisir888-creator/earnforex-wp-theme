@@ -425,8 +425,6 @@ class EFP_Affiliate_Link_Manager {
             'order'          => 'ASC',
         ];
 
-        ];
-
         $query = new WP_Query($args);
         $links = [];
 
